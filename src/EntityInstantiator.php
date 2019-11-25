@@ -32,6 +32,7 @@ class EntityInstantiator implements Instantiator
   public function get($class, array $data = [])
   {
     $className = is_object($class) ? get_class($class) : $class;
+
     $em   = $this->getManager($className);
     $meta = $em->getClassMetadata($className);
 
@@ -44,9 +45,9 @@ class EntityInstantiator implements Instantiator
   public function create($class, array $identifier = [])
   {
     $className = is_object($class) ? get_class($class) : $class;
-    $em   = $this->getManager($className);
-    $meta = $em->getClassMetadata($className);
-    $id   = $this->getIdentifier($meta, $identifier);
+    $em        = $this->getManager($className);
+    $meta      = $em->getClassMetadata($className);
+    $id        = $this->getIdentifier($meta, $identifier);
 
     return $this->creationStrategy->create($meta, $id, is_object($class) ? $class : null);
   }
@@ -129,6 +130,7 @@ class EntityInstantiator implements Instantiator
 
     /** @var Collection $collection */
     $collection = $entity->$field;
+    $collection->clear();
     foreach ($value as $itemData) {
       if ($item = $this->get($targetClass, $itemData)) {
         if (!$collection->contains($item)) {
