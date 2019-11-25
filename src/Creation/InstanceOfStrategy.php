@@ -19,7 +19,8 @@ class InstanceOfStrategy implements CreationStrategy
   {
     $className = $meta->getName();
     foreach ($this->classMap as $class => $strategy) {
-      if (is_a($className, $class, true)) {
+      // '' is used as fallback
+      if ($class === '' || is_a($className, $class, true)) {
         return $strategy->create($meta, $id);
       }
     }

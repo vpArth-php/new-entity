@@ -20,7 +20,7 @@ class InstanceOfStrategy implements IdentifyStrategy
   {
     $className = $meta->getName();
     foreach ($this->classMap as $class => $strategy) {
-      if (is_a($className, $class, true)) {
+      if ($class === '' || is_a($className, $class, true)) {
         return $strategy->getIdentifier($meta, $identifier);
       }
     }
