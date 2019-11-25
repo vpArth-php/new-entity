@@ -17,13 +17,13 @@ class EntityInstantiator implements Instantiator
   protected $registry;
   /** @var IdentifyStrategy */
   protected $identifyStrategy;
+  private   $idMap = [];
 
   public function __construct(ManagerRegistry $registry, IdentifyStrategy $identifyStrategy = null)
   {
     $this->registry         = $registry;
     $this->setIdentifyStrategy($identifyStrategy ?? new PrimaryKeyStrategy());
   }
-
   public function setIdentifyStrategy(IdentifyStrategy $strategy): void
   {
     $this->identifyStrategy = $strategy;
@@ -40,7 +40,14 @@ class EntityInstantiator implements Instantiator
     return $entity;
   }
 
-  private $idMap = [];
+  public function getManager(string $className): ObjectManager
+  {
+    $em = $this->registry->getManagerForClass($className);
+    if (null === $em) {
+      throw new NotFound("Manager for '$className' not found");
+    }
+    return $em;
+  }
   public function create($className, array $identifier = [])
   {
     $em   = $this->getManager($className);
@@ -59,16 +66,9 @@ class EntityInstantiator implements Instantiator
 
     return $entity;
   }
-
-  protected function getIdentifier(ClassMetadata $meta, array &$data): ?array
+  public function clearState(): void
   {
-    $id = $this->identifyStrategy->getIdentifier($meta, $data);
-    if ($id) {
-      foreach ($id as $field => $value) {
-        unset($data[$field]);
-      }
-    }
-    return $id;
+    $this->idMap = [];
   }
 
   public function setDataForEntity($entity, array $data = [], ClassMetadata $meta = null)
@@ -105,7 +105,34 @@ class EntityInstantiator implements Instantiator
 
     return $entity;
   }
-  private function mergeCollection(ClassMetadata $meta, $entity, $field, $value): void
+
+  protected function getIdentifier(ClassMetadata $meta, array &$data): ?array
+  {
+    $id = $this->identifyStrategy->getIdentifier($meta, $data);
+    if ($id) {
+      foreach ($id as $field => $value) {
+        unset($data[$field]);
+      }
+    }
+    return $id;
+  }
+  protected function initCollectionFields(ClassMetadata $meta, $entity): void
+  {
+    foreach ($meta->getAssociationNames() as $field) {
+      if (!$entity->$field && $meta->isCollectionValuedAssociation($field)) {
+        $entity->$field = new ArrayCollection();
+      }
+    }
+  }
+  protected function setEntityFieldValue($entity, $field, $value): void
+  {
+    if (method_exists($entity, 'set' . ucfirst($field))) {
+      $entity->{'set' . ucfirst($field)}($value);
+    } else {
+      $entity->$field = $value;
+    }
+  }
+  protected function mergeCollection(ClassMetadata $meta, $entity, $field, $value): void
   {
     $targetClass = $meta->getAssociationTargetClass($field);
     $mappedBy    = $meta->getAssociationMappedByTargetField($field);
@@ -119,33 +146,6 @@ class EntityInstantiator implements Instantiator
         }
         $item->$mappedBy = $entity;
       }
-    }
-  }
-
-  protected function initCollectionFields(ClassMetadata $meta, $entity): void
-  {
-    foreach ($meta->getAssociationNames() as $field) {
-      if (!$entity->$field && $meta->isCollectionValuedAssociation($field)) {
-        $entity->$field = new ArrayCollection();
-      }
-    }
-  }
-
-  public function getManager(string $className): ObjectManager
-  {
-    $em = $this->registry->getManagerForClass($className);
-    if (null === $em) {
-      throw new NotFound("Manager for '$className' not found");
-    }
-    return $em;
-  }
-
-  protected function setEntityFieldValue($entity, $field, $value): void
-  {
-    if (method_exists($entity, 'set' . ucfirst($field))) {
-      $entity->{'set' . ucfirst($field)}($value);
-    } else {
-      $entity->$field = $value;
     }
   }
   protected function setFieldValues(ClassMetadata $meta, $entity, &$data): void
@@ -176,8 +176,4 @@ class EntityInstantiator implements Instantiator
     }
   }
 
-  public function clearState()
-  {
-    $this->idMap = [];
-  }
 }
