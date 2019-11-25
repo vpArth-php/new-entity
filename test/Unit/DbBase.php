@@ -39,7 +39,8 @@ abstract class DbBase extends TestCase
     );
     $conn   = [
         'driver' => 'pdo_sqlite',
-        'path'   => ':memory:',
+        'path'   => '/tmp/test1.db',
+        // 'path'   => ':memory:',
     ];
     return EntityManager::create($conn, $config);
   }

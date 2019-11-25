@@ -16,12 +16,14 @@ use Test\Unit\Util\JsonSerializeFields;
 class Author implements JsonSerializable
 {
   use JsonSerializeFields;
-  protected static $fields = ['id', 'title', 'books'];
+  protected static $fields = ['id', 'title', 'description', 'books'];
 
   /** @ORM\Id @ORM\GeneratedValue @ORM\Column(type="integer") */
   protected $id;
   /** @ORM\Column(type="string") */
   protected $title;
+  /** @ORM\Column(type="string", nullable=true) */
+  protected $description;
   /** @ORM\OneToMany(targetEntity="Book", mappedBy="author", cascade={"persist"}) */
   protected $books;
 

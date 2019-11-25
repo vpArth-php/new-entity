@@ -2,32 +2,31 @@
 
 namespace Arth\Util\Doctrine;
 
-use Arth\Util\Doctrine\Exception\NotFound;
+use Arth\Util\Doctrine\Creation\SimpleStrategy;
 use Arth\Util\Doctrine\Identify\PrimaryKeyStrategy;
 use Arth\Util\TimeMachine;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\Common\Persistence\Mapping\ClassMetadata;
-use Doctrine\Common\Persistence\ObjectManager;
 
 class EntityInstantiator implements Instantiator
 {
-  /** @var ManagerRegistry */
-  protected $registry;
+  use GetManager;
+
   /** @var IdentifyStrategy */
   protected $identifyStrategy;
-  private   $idMap = [];
+  /** @var CreationStrategy */
+  private $creationStrategy;
 
-  public function __construct(ManagerRegistry $registry, IdentifyStrategy $identifyStrategy = null)
+  public function __construct(ManagerRegistry $registry, IdentifyStrategy $identifyStrategy = null, CreationStrategy $creationStrategy = null)
   {
     $this->registry         = $registry;
     $this->setIdentifyStrategy($identifyStrategy ?? new PrimaryKeyStrategy());
+    $this->setCreationStrategy($creationStrategy ?? new SimpleStrategy($this->registry));
   }
-  public function setIdentifyStrategy(IdentifyStrategy $strategy): void
-  {
-    $this->identifyStrategy = $strategy;
-  }
+  public function setIdentifyStrategy(IdentifyStrategy $strategy): void { $this->identifyStrategy = $strategy; }
+  public function setCreationStrategy(CreationStrategy $strategy): void { $this->creationStrategy = $strategy; }
 
   public function get($className, array $data = [])
   {
@@ -40,35 +39,17 @@ class EntityInstantiator implements Instantiator
     return $entity;
   }
 
-  public function getManager(string $className): ObjectManager
-  {
-    $em = $this->registry->getManagerForClass($className);
-    if (null === $em) {
-      throw new NotFound("Manager for '$className' not found");
-    }
-    return $em;
-  }
   public function create($className, array $identifier = [])
   {
     $em   = $this->getManager($className);
     $meta = $em->getClassMetadata($className);
     $id   = $this->getIdentifier($meta, $identifier);
 
-    if ($id) {
-      $key    = implode('|', array_merge([$className], array_values($id)));
-      $entity = $this->idMap[$key] ?? $em->getRepository($className)->findOneBy($id);
-    }
-
-    $entity = $entity ?? $meta->newInstance();
-    if (isset($key)) {
-      $this->idMap[$key] = $entity;
-    }
-
-    return $entity;
+    return $this->creationStrategy->create($meta, $id);
   }
   public function clearState(): void
   {
-    $this->idMap = [];
+    $this->creationStrategy->clearState();
   }
 
   public function setDataForEntity($entity, array $data = [], ClassMetadata $meta = null)
@@ -154,6 +135,11 @@ class EntityInstantiator implements Instantiator
       if (!array_key_exists($field, $data)) {
         continue;
       }
+      if (in_array($field, $meta->getIdentifierFieldNames(), true)) {
+        // skip pk fields
+        unset($data[$field]);
+        continue;
+      }
       $type  = $meta->getTypeOfField($field);
       $value = $data[$field];
       unset($data[$field]);
@@ -175,5 +161,4 @@ class EntityInstantiator implements Instantiator
       $this->setEntityFieldValue($entity, $field, $value);
     }
   }
-
 }

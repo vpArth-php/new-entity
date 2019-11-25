@@ -6,11 +6,14 @@ use Arth\Util\Doctrine\EntityInstantiator;
 use Arth\Util\Doctrine\Exception\InvalidArgument;
 use Arth\Util\Doctrine\Identify\CompositeStrategy;
 use Arth\Util\Doctrine\Identify\FieldSetStrategy;
+use Arth\Util\Doctrine\Identify\InstanceOfStrategy;
 use Arth\Util\Doctrine\Identify\PrimaryKeyStrategy;
 use Arth\Util\Doctrine\IdentifyStrategy;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use StdClass;
 use Test\Unit\Entity\Library\Author;
+use Test\Unit\Entity\Library\Book;
+use Test\Unit\Entity\Simple\GetSetProps;
 
 class IdStrategyTest extends DbBase
 {
@@ -75,6 +78,46 @@ class IdStrategyTest extends DbBase
     static::assertEquals($entity->id, $created->id);
   }
 
+  public function testInstanceOfStrategy(): void
+  {
+    $strategy = new InstanceOfStrategy([
+        Author::class => new PrimaryKeyStrategy(),
+        Book::class   => new FieldSetStrategy(['title']),
+    ]);
+    $id       = $strategy->getIdentifier($this->em->getClassMetadata(Author::class), ['id' => 3, 'title' => 'Three']);
+    static::assertEquals(['id' => 3], $id);
+    $id = $strategy->getIdentifier($this->em->getClassMetadata(Book::class), ['id' => 3, 'title' => 'Three']);
+    static::assertEquals(['title' => 'Three'], $id);
+    $id = $strategy->getIdentifier($this->em->getClassMetadata(GetSetProps::class), ['id' => 3, 'title' => 'Three']);
+    static::assertNull($id);
+  }
+  public function testSvcInstanceOfStrategy(): void
+  {
+    $strategy = new InstanceOfStrategy([
+        Author::class => new PrimaryKeyStrategy(),
+        Book::class   => new FieldSetStrategy(['title']),
+    ]);
+    $this->svc->setIdentifyStrategy($strategy);
+
+    $author1 = $this->createAuthor('A1');
+    $author2 = $this->createAuthor('A2');
+    /** @var Author $a */
+    $a        = $this->svc->get(Author::class, ['id' => $author2->id, 'title' => $author1->title]);
+    $a->title = 'A selected';
+    static::assertEquals($author2, $a);
+
+    $book1 = $this->createBook($a, 'B1', 'First');
+    $book2 = $this->createBook($a, 'B2', 'Second');
+    $this->em->flush();
+    /** @var Book $b */
+    $b = $this->svc->get(Book::class, ['id' => $book2->id, 'title' => $book1->title]);
+    static::assertEquals($book1, $b);
+    $this->em->flush();
+
+    $allBooks = $this->em->getRepository(Book::class)->findAll();
+    static::assertCount(2, $allBooks);
+  }
+
   public function testInvalidCompositeArgument(): void
   {
     $this->expectException(InvalidArgument::class);
@@ -93,7 +136,18 @@ class IdStrategyTest extends DbBase
 
     $this->em->persist($entity);
     $this->em->flush();
-    $this->em->clear();
+
+    return $entity;
+  }
+  protected function createBook(Author $author, $title, $description): Book
+  {
+    $entity = new Book($author);
+
+    $entity->title       = $title;
+    $entity->description = $description;
+
+    $this->em->persist($entity);
+    $this->em->flush();
 
     return $entity;
   }
