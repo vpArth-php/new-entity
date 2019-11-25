@@ -20,7 +20,12 @@ class EntityInstantiator implements Instantiator
   public function __construct(ManagerRegistry $registry, IdentifyStrategy $identifyStrategy = null)
   {
     $this->registry         = $registry;
-    $this->identifyStrategy = $identifyStrategy ?? new PrimaryKeyStrategy();
+    $this->setIdentifyStrategy($identifyStrategy ?? new PrimaryKeyStrategy());
+  }
+
+  public function setIdentifyStrategy(IdentifyStrategy $strategy): void
+  {
+    $this->identifyStrategy = $strategy;
   }
 
   public function get($className, array $data = [])
@@ -41,7 +46,7 @@ class EntityInstantiator implements Instantiator
     $id   = $this->getIdentifier($meta, $identifier);
 
     if ($id) {
-      $entity = $em->find($className, $id);
+      $entity = $em->getRepository($className)->findOneBy($id);
     }
 
     return $entity ?? $meta->newInstance();
