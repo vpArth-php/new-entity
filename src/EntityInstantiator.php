@@ -3,6 +3,7 @@
 namespace Arth\Util;
 
 use Arth\Util\Exception\NotFound;
+use Arth\Util\Identify\PrimaryKeyStrategy;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Persistence\ManagerRegistry;
@@ -13,45 +14,48 @@ class EntityInstantiator implements Instantiator
 {
   /** @var ManagerRegistry */
   protected $registry;
+  /** @var IdentifyStrategy */
+  protected $identifyStrategy;
 
-  public function __construct(ManagerRegistry $registry)
+  public function __construct(ManagerRegistry $registry, IdentifyStrategy $identifyStrategy = null)
   {
-    $this->registry = $registry;
+    $this->registry         = $registry;
+    $this->identifyStrategy = $identifyStrategy ?? new PrimaryKeyStrategy();
   }
 
   public function get($className, array $data = [])
   {
     $em   = $this->getManager($className);
     $meta = $em->getClassMetadata($className);
-    $id   = $this->getIdentifier($meta, $data);
 
-    if ($id) {
-      $entity = $em->find($className, $id);
-    }
-    $entity = $entity ?? $meta->newInstance();
-
+    $entity = $this->create($className, $data);
     $this->setDataForEntity($entity, $data, $meta);
 
     return $entity;
   }
 
-  protected function getIdentifier(ClassMetadata $meta, array &$data)
+  public function create($className, array $identifier = [])
   {
-    $idFields = $meta->getIdentifierFieldNames();
+    $em   = $this->getManager($className);
+    $meta = $em->getClassMetadata($className);
+    $id   = $this->getIdentifier($meta, $identifier);
 
-    $result = [];
-    foreach ($idFields as $i => $idField) {
-      if (array_key_exists($i, $data)) {
-        $data[$idField] = $data[$i];
-        unset($data[$i]);
-      }
-      if (!array_key_exists($idField, $data)) {
-        return null;
-      }
-      $result[$idField] = $data[$idField];
-      unset($data[$idField]);
+    if ($id) {
+      $entity = $em->find($className, $id);
     }
-    return $result;
+
+    return $entity ?? $meta->newInstance();
+  }
+
+  protected function getIdentifier(ClassMetadata $meta, array &$data): ?array
+  {
+    $id = $this->identifyStrategy->getIdentifier($meta, $data);
+    if ($id) {
+      foreach ($id as $field => $value) {
+        unset($data[$field]);
+      }
+    }
+    return $id;
   }
 
   public function setDataForEntity($entity, array $data = [], ClassMetadata $meta = null)
