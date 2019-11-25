@@ -1,0 +1,17 @@
+{
+    "name": "arth/new-entity",
+    "description": "Entity creation/fill library",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Alexander Deider",
+            "email": "arth.inbox@gmail.com"
+        },
+        {
+            "name": "Dmitry Otkidyshev",
+            "email": "dev@ordman.info"
+        }
+    ],
+    "require": {}
+}
