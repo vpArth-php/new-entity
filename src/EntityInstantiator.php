@@ -36,20 +36,20 @@ class EntityInstantiator implements Instantiator
     $em   = $this->getManager($className);
     $meta = $em->getClassMetadata($className);
 
-    $entity = is_object($class) ? $class : $this->create($class, $data);
+    $entity = $this->create($class, $data);
     $this->update($entity, $data, $meta);
 
     return $entity;
   }
 
-  public function create($class, array $identifier = [])
+  public function create($class, array $data = [])
   {
     $className = is_object($class) ? get_class($class) : $class;
     $em        = $this->getManager($className);
     $meta      = $em->getClassMetadata($className);
-    $id        = $this->getIdentifier($meta, $identifier);
+    $id        = $this->getIdentifier($meta, $data);
 
-    return $this->creationStrategy->create($meta, $id, is_object($class) ? $class : null);
+    return $this->creationStrategy->create($meta, $id, is_object($class) ? $class : null, $data);
   }
 
   public function clearState(): void
@@ -85,7 +85,7 @@ class EntityInstantiator implements Instantiator
       } elseif ($meta->isCollectionValuedAssociation($field)) {
         $this->mergeCollection($meta, $entity, $field, $value);
       } else {
-        if ($value !== null && !$value instanceof $targetClass) {
+        if ($value !== null) {
           $value = $this->get($entity->$field ?? $targetClass, $value);
         }
         $this->setEntityFieldValue($entity, $field, $value);

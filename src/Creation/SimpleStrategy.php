@@ -17,7 +17,7 @@ class SimpleStrategy implements CreationStrategy
   {
     $this->registry = $registry;
   }
-  public function create(ClassMetadata $meta, ?array $id, $entity = null)
+  public function create(ClassMetadata $meta, ?array $id, $entity = null, $data = null)
   {
     $className = $meta->getName();
     $em        = $this->getManager($className);

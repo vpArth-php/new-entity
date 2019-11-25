@@ -12,6 +12,6 @@ interface Instantiator
 
   public function update($entity, array $data = [], ClassMetadata $meta = null);
   public function setIdentifyStrategy(IdentifyStrategy $strategy): void;
-  public function create($className, array $identifier = []);
+  public function create($className, array $data = []);
   public function clearState(): void;
 }
