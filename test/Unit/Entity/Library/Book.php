@@ -6,6 +6,8 @@ use Arth\Util\TimeMachine;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use JsonSerializable;
+use Test\Unit\Util\JsonSerializeFields;
 
 /**
  * @ORM\Entity
@@ -18,8 +20,11 @@ use Doctrine\ORM\Mapping as ORM;
  * @property      DateTimeImmutable createdAt
  * @property      DateTimeImmutable writtenAt
  */
-class Book
+class Book implements JsonSerializable
 {
+  use JsonSerializeFields;
+  protected static $fields = ['id', 'title', 'description', 'createdAt', 'writtenAt', 'author'];
+
   /** @ORM\Id @ORM\GeneratedValue @ORM\Column(type="integer") */
   protected $id;
   /** @ORM\Column(type="string") */

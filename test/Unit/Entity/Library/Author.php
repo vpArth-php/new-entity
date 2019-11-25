@@ -4,6 +4,8 @@ namespace Test\Unit\Entity\Library;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use JsonSerializable;
+use Test\Unit\Util\JsonSerializeFields;
 
 /**
  * @ORM\Entity
@@ -11,8 +13,11 @@ use Doctrine\ORM\Mapping as ORM;
  * @property      string title
  * @property Book[]|ArrayCollection books
  */
-class Author
+class Author implements JsonSerializable
 {
+  use JsonSerializeFields;
+  protected static $fields = ['id', 'title', 'books'];
+
   /** @ORM\Id @ORM\GeneratedValue @ORM\Column(type="integer") */
   protected $id;
   /** @ORM\Column(type="string") */

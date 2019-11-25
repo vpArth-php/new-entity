@@ -10,6 +10,8 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMException;
 use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\ORM\Tools\Setup;
+use Generator;
+use JsonSerializable;
 use PHPUnit\Framework\TestCase;
 use Test\Unit\Entity as E;
 
@@ -41,45 +43,31 @@ class CreationTest extends TestCase
     $tm->setFrozenMode();
   }
 
-  public function testPublicProps(): void
+  /** @dataProvider data */
+  public function testCreation($className, $data, $expected): void
   {
-    /** @var E\Simple\PublicProps $entity */
-    $entity = $this->svc->get(E\Simple\PublicProps::class, [
-        'title' => 'First',
-    ]);
+    /** @var JsonSerializable $entity */
+    $entity = $this->svc->get($className, $data);
 
-    static::assertNotEmpty($entity);
-    static::assertEquals('First', $entity->title);
+    $entityData = $entity->jsonSerialize();
+    foreach ($expected as $field => $expectedValue) {
+      static::assertEquals($expectedValue, $entityData[$field]);
+    }
+  }
+  /** @dataProvider data */
+  public function testLateDataSet($className, $data, $expected): void
+  {
+    /** @var JsonSerializable $entity */
+    $entity = $this->svc->get($className, []);
+    $this->svc->setDataForEntity($entity, $data);
+
+    $entityData = $entity->jsonSerialize();
+    foreach ($expected as $field => $expectedValue) {
+      static::assertEquals($expectedValue, $entityData[$field]);
+    }
   }
 
-  public function testMagicProps(): void
-  {
-    /** @var E\Simple\MagicProps $entity */
-    $entity = $this->svc->get(E\Simple\MagicProps::class, [
-        'title' => 'First',
-    ]);
-
-    static::assertNotEmpty($entity);
-    static::assertEquals('First', $entity->title);
-
-    $this->svc->setDataForEntity($entity, [
-        'title' => 'Entity',
-    ]);
-    static::assertEquals('Entity', $entity->title);
-  }
-
-  public function testGetSetProps(): void
-  {
-    /** @var E\Simple\GetSetProps $entity */
-    $entity = $this->svc->get(E\Simple\GetSetProps::class, [
-        'title' => 'First',
-    ]);
-
-    static::assertNotEmpty($entity);
-    static::assertEquals('First', $entity->getTitle());
-  }
-
-  public function testLibrary(): void
+  public function testAssociations(): void
   {
     /** @var E\Library\Author $author1 */
     $author1 = $this->svc->get(E\Library\Author::class, [
@@ -93,8 +81,8 @@ class CreationTest extends TestCase
     /** @var E\Library\Book $book */
     // relation by PK
     $book = $this->svc->get(E\Library\Book::class, [
-       'title' => 'Евгений Онегин',
-       'author' => $author1->id,
+        'title'  => 'Евгений Онегин',
+        'author' => $author1->id,
     ]);
     $this->em->persist($book);
     $this->em->flush();
@@ -104,11 +92,11 @@ class CreationTest extends TestCase
 
     // relation by object
     $book = $this->svc->get(E\Library\Book::class, [
-       'title' => 'Евгений Онегин',
-       'author' => $author1,
-       'descriptionText' => 'Роман в стихах',
-       'createdAt' => self::NOW,
-       'writtenAt' => '1830-09-25',
+        'title'           => 'Евгений Онегин',
+        'author'          => $author1,
+        'descriptionText' => 'Роман в стихах',
+        'createdAt'       => self::NOW,
+        'writtenAt'       => '1830-09-25',
     ]);
     $this->em->persist($book);
     $this->em->flush();
@@ -118,6 +106,13 @@ class CreationTest extends TestCase
     static::assertEquals('РОМАН В СТИХАХ', $book->description);
     static::assertEquals(self::NOW, $book->createdAt->format('Y-m-d H:i:s'));
     static::assertEquals('1830-09-25 00:00:00', $book->writtenAt->format('Y-m-d H:i:s'));
+  }
+
+  public function data(): ?Generator
+  {
+    yield [E\Simple\PublicProps::class, ['title' => 'First'], ['title' => 'First']];
+    yield [E\Simple\MagicProps::class, ['title' => 'First'], ['title' => 'First']];
+    yield [E\Simple\GetSetProps::class, ['title' => 'First'], ['title' => 'First']];
   }
 
   /**
