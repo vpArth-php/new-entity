@@ -9,6 +9,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\Common\Persistence\Mapping\ClassMetadata;
+use Doctrine\ORM\Id\AssignedGenerator;
 
 class EntityInstantiator implements Instantiator
 {
@@ -131,13 +132,13 @@ class EntityInstantiator implements Instantiator
   }
   protected function setFieldValues(ClassMetadata $meta, $entity, &$data): void
   {
+    if (!$meta->idGenerator instanceof AssignedGenerator) {
+      foreach ($meta->getIdentifierFieldNames() as $idField) {
+        unset($data[$idField]);
+      }
+    }
     foreach ($meta->getFieldNames() as $field) {
       if (!array_key_exists($field, $data)) {
-        continue;
-      }
-      if (in_array($field, $meta->getIdentifierFieldNames(), true)) {
-        // skip pk fields
-        unset($data[$field]);
         continue;
       }
       $type  = $meta->getTypeOfField($field);
