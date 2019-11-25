@@ -34,12 +34,15 @@ class ReuseSameTest extends DbBase
             ['title' => 'Сказка о золотой рыбке'],
         ],
     ]);
+    $this->svc->clearState();
+    static::assertCount(3, $entity->books);
     $this->em->persist($entity);
     $this->em->flush();
     $this->em->clear();
 
+    /** @var Author $author */
     $author = $this->em->find(Author::class, $entity->id);
     static::assertEquals('Пушкин', $author->title);
-    static::assertCount(3, $entity->books);
+    static::assertCount(3, $author->books);
   }
 }

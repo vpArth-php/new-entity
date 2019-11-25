@@ -40,6 +40,7 @@ class EntityInstantiator implements Instantiator
     return $entity;
   }
 
+  private $idMap = [];
   public function create($className, array $identifier = [])
   {
     $em   = $this->getManager($className);
@@ -47,10 +48,16 @@ class EntityInstantiator implements Instantiator
     $id   = $this->getIdentifier($meta, $identifier);
 
     if ($id) {
-      $entity = $em->getRepository($className)->findOneBy($id);
+      $key    = implode('|', array_merge([$className], array_values($id)));
+      $entity = $this->idMap[$key] ?? $em->getRepository($className)->findOneBy($id);
     }
 
-    return $entity ?? $meta->newInstance();
+    $entity = $entity ?? $meta->newInstance();
+    if (isset($key)) {
+      $this->idMap[$key] = $entity;
+    }
+
+    return $entity;
   }
 
   protected function getIdentifier(ClassMetadata $meta, array &$data): ?array
@@ -107,7 +114,9 @@ class EntityInstantiator implements Instantiator
     $collection = $entity->$field;
     foreach ($value as $itemData) {
       if ($item = $this->get($targetClass, $itemData)) {
-        $collection->add($item);
+        if (!$collection->contains($item)) {
+          $collection->add($item);
+        }
         $item->$mappedBy = $entity;
       }
     }
@@ -165,5 +174,10 @@ class EntityInstantiator implements Instantiator
     foreach ($data as $field => $value) { // Unmapped fields, perhaps setters
       $this->setEntityFieldValue($entity, $field, $value);
     }
+  }
+
+  public function clearState()
+  {
+    $this->idMap = [];
   }
 }
