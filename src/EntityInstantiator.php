@@ -20,13 +20,30 @@ class EntityInstantiator implements Instantiator
 
   public function get($className, array $data = [])
   {
-    $em = $this->getManager($className);
-    $meta   = $em->getClassMetadata($className);
-    $entity = $meta->newInstance();
+    $em   = $this->getManager($className);
+    $meta = $em->getClassMetadata($className);
+    $id   = $this->getIdentifier($meta, $data);
+
+    $entity = $id ? $em->find($className, $id) : $meta->newInstance();
 
     $this->setDataForEntity($entity, $data, $meta);
 
     return $entity;
+  }
+
+  protected function getIdentifier(ClassMetadata $meta, &$data)
+  {
+    $idFields = $meta->getIdentifierFieldNames();
+
+    $result = [];
+    foreach ($idFields as $idField) {
+      if (!array_key_exists($idField, $data)) {
+        return null;
+      }
+      $result[$idField] = $data[$idField];
+      unset($data[$idField]);
+    }
+    return $result;
   }
 
   public function setDataForEntity($entity, array $data = [], ClassMetadata $meta = null)

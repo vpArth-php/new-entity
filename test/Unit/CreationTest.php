@@ -6,37 +6,25 @@ use Arth\Util\EntityInstantiator;
 use Arth\Util\TimeMachine;
 use DateTimeImmutable;
 use Doctrine\Common\Persistence\ManagerRegistry;
-use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\ORMException;
-use Doctrine\ORM\Tools\SchemaTool;
-use Doctrine\ORM\Tools\Setup;
 use Generator;
 use JsonSerializable;
-use PHPUnit\Framework\TestCase;
 use Test\Unit\Entity as E;
 
-class CreationTest extends TestCase
+class CreationTest extends DbBase
 {
   private const NOW = '2019-05-15 15:00:00';
   /** @var EntityInstantiator */
   private $svc;
-  /** @var EntityManager */
-  private $em;
 
   protected function setUp(): void
   {
-    $em      = $this->getEm();
+    parent::setUp();
     $manager = $this->createMock(ManagerRegistry::class);
     $manager
         ->method('getManagerForClass')
-      ->willReturn($em);
+        ->willReturn($this->em);
 
     $this->svc = new EntityInstantiator($manager);
-    $this->em = $em;
-
-    $tool = new SchemaTool($this->em);
-    $tool->dropDatabase();
-    $tool->createSchema($this->em->getMetadataFactory()->getAllMetadata());
 
     $tm = TimeMachine::getInstance();
     $tm->setNow(new DateTimeImmutable(self::NOW));
@@ -113,25 +101,5 @@ class CreationTest extends TestCase
     yield [E\Simple\PublicProps::class, ['title' => 'First'], ['title' => 'First']];
     yield [E\Simple\MagicProps::class, ['title' => 'First'], ['title' => 'First']];
     yield [E\Simple\GetSetProps::class, ['title' => 'First'], ['title' => 'First']];
-  }
-
-  /**
-   * @return EntityManager
-   * @throws ORMException
-   */
-  private function getEm(): EntityManager
-  {
-    $config = Setup::createAnnotationMetadataConfiguration(
-        array(__DIR__ . '/Entity'),
-        true, // Metadata use cache if false here
-        null,
-        null,
-        false
-    );
-    $conn   = [
-        'driver' => 'pdo_sqlite',
-        'path'   => ':memory:',
-    ];
-    return EntityManager::create($conn, $config);
   }
 }
