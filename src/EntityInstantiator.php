@@ -31,12 +31,16 @@ class EntityInstantiator implements Instantiator
     return $entity;
   }
 
-  protected function getIdentifier(ClassMetadata $meta, &$data)
+  protected function getIdentifier(ClassMetadata $meta, array &$data)
   {
     $idFields = $meta->getIdentifierFieldNames();
 
     $result = [];
-    foreach ($idFields as $idField) {
+    foreach ($idFields as $i => $idField) {
+      if (array_key_exists($i, $data)) {
+        $data[$idField] = $data[$i];
+        unset($data[$i]);
+      }
       if (!array_key_exists($idField, $data)) {
         return null;
       }
@@ -55,15 +59,10 @@ class EntityInstantiator implements Instantiator
     if (null === $meta) {
       $meta = $em->getClassMetadata($className);
     }
+
+    $this->initCollectionFields($meta, $entity);
+
     $associations = $meta->getAssociationNames();
-
-    foreach ($associations as $field) {
-      // Initialize collections
-      if (!$entity->$field && $meta->isCollectionValuedAssociation($field)) {
-        $entity->$field = new ArrayCollection();
-      }
-    }
-
     foreach ($associations as $field) {
       $targetClass = $meta->getAssociationTargetClass($field);
       if (!array_key_exists($field, $data)) {
@@ -72,7 +71,9 @@ class EntityInstantiator implements Instantiator
       $value = $data[$field];
       unset($data[$field]);
       if (!$meta->isAssociationInverseSide($field)) { // owning side
-        $value = $em->find($targetClass, $value);
+        if (!$value instanceof $targetClass) {
+          $value = $this->get($targetClass, is_scalar($value) ? [$value] : $value);
+        }
         $this->setEntityFieldValue($entity, $field, $value);
       }
     }
@@ -80,6 +81,14 @@ class EntityInstantiator implements Instantiator
     $this->setFieldValues($meta, $entity, $data);
 
     return $entity;
+  }
+  protected function initCollectionFields(ClassMetadata $meta, $entity): void
+  {
+    foreach ($meta->getAssociationNames() as $field) {
+      if (!$entity->$field && $meta->isCollectionValuedAssociation($field)) {
+        $entity->$field = new ArrayCollection();
+      }
+    }
   }
 
   public function getManager(string $className): ObjectManager
