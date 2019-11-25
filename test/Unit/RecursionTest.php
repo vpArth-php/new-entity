@@ -72,4 +72,34 @@ class RecursionTest extends DbBase
     static::assertCount(1, $book->author->books);
   }
 
+  public function testSetCollection(): void
+  {
+    /** @var E\Library\Book $book */
+    $book = $this->svc->get(E\Library\Book::class, [
+        'author' => ['title' => 'А.С. Пушкин'],
+        'title'  => 'О золотой рыбке',
+    ]);
+    $this->em->persist($book);
+    $this->em->flush();
+    $this->em->clear();
+
+    /** @var E\Library\Author $entity */
+    $entity = $this->svc->get(E\Library\Author::class, [
+        'id'    => $book->author->id,
+        'title' => 'Пушкин',
+        'books' => [
+            ['title' => 'Евгений Онегин'],
+            ['title' => 'Руслан и Людмила'],
+            ['title' => 'Сказка о золотой рыбке', 'id' => $book->id],
+        ],
+    ]);
+    $this->em->persist($entity);
+    $this->em->flush();
+    $this->em->clear();
+    $author = $this->em->find(E\Library\Author::class, $entity->id);
+
+    static::assertEquals('Пушкин', $author->title);
+    static::assertEquals('Сказка о золотой рыбке', $this->em->find(E\Library\Book::class, $book->id)->title);
+    static::assertCount(3, $entity->books);
+  }
 }

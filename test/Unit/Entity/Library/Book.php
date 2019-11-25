@@ -37,9 +37,7 @@ class Book implements JsonSerializable
   /** @ORM\Column(type="date", nullable=true) */
   protected $writtenAt;
 
-
-
-  /** @ORM\ManyToOne(targetEntity="Author", inversedBy="books") */
+  /** @ORM\ManyToOne(targetEntity="Author", inversedBy="books", cascade={"persist"}) */
   protected $author;
 
   public function __construct(Author $author) {
@@ -55,7 +53,8 @@ class Book implements JsonSerializable
     $author->books->add($this);
   }
 
-  public function setDescriptionText($text)
+  /** @noinspection PhpUnused */
+  public function setDescriptionText($text): void
   {
     $this->description = mb_strtoupper($text);
   }

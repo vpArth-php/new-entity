@@ -4,6 +4,7 @@ namespace Arth\Util;
 
 use Arth\Util\Exception\NotFound;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\Common\Persistence\Mapping\ClassMetadata;
 use Doctrine\Common\Persistence\ObjectManager;
@@ -24,7 +25,10 @@ class EntityInstantiator implements Instantiator
     $meta = $em->getClassMetadata($className);
     $id   = $this->getIdentifier($meta, $data);
 
-    $entity = $id ? $em->find($className, $id) : $meta->newInstance();
+    if ($id) {
+      $entity = $em->find($className, $id);
+    }
+    $entity = $entity ?? $meta->newInstance();
 
     $this->setDataForEntity($entity, $data, $meta);
 
@@ -75,6 +79,8 @@ class EntityInstantiator implements Instantiator
           $value = $this->get($targetClass, is_scalar($value) ? [$value] : $value);
         }
         $this->setEntityFieldValue($entity, $field, $value);
+      } else {
+        $this->mergeCollection($meta, $entity, $field, $value);
       }
     }
 
@@ -82,6 +88,21 @@ class EntityInstantiator implements Instantiator
 
     return $entity;
   }
+  private function mergeCollection(ClassMetadata $meta, $entity, $field, $value): void
+  {
+    $targetClass = $meta->getAssociationTargetClass($field);
+    $mappedBy    = $meta->getAssociationMappedByTargetField($field);
+
+    /** @var Collection $collection */
+    $collection = $entity->$field;
+    foreach ($value as $itemData) {
+      if ($item = $this->get($targetClass, $itemData)) {
+        $collection->add($item);
+        $item->$mappedBy = $entity;
+      }
+    }
+  }
+
   protected function initCollectionFields(ClassMetadata $meta, $entity): void
   {
     foreach ($meta->getAssociationNames() as $field) {

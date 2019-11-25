@@ -22,7 +22,7 @@ class Author implements JsonSerializable
   protected $id;
   /** @ORM\Column(type="string") */
   protected $title;
-  /** @ORM\OneToMany(targetEntity="Book", mappedBy="author") */
+  /** @ORM\OneToMany(targetEntity="Book", mappedBy="author", cascade={"persist"}) */
   protected $books;
 
   public function __construct()
