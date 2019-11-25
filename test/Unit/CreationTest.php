@@ -47,7 +47,7 @@ class CreationTest extends DbBase
   {
     /** @var JsonSerializable $entity */
     $entity = $this->svc->get($className, []);
-    $this->svc->setDataForEntity($entity, $data);
+    $this->svc->update($entity, $data);
 
     $entityData = $entity->jsonSerialize();
     foreach ($expected as $field => $expectedValue) {

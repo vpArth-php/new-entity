@@ -15,13 +15,13 @@ class InstanceOfStrategy implements CreationStrategy
   {
     $this->classMap = $classMap;
   }
-  public function create(ClassMetadata $meta, ?array $id)
+  public function create(ClassMetadata $meta, ?array $id, $entity = null)
   {
     $className = $meta->getName();
     foreach ($this->classMap as $class => $strategy) {
       // '' is used as fallback
       if ($class === '' || is_a($className, $class, true)) {
-        return $strategy->create($meta, $id);
+        return $strategy->create($meta, $id, $entity);
       }
     }
     return null;

@@ -22,38 +22,41 @@ class EntityInstantiator implements Instantiator
 
   public function __construct(ManagerRegistry $registry, IdentifyStrategy $identifyStrategy = null, CreationStrategy $creationStrategy = null)
   {
-    $this->registry         = $registry;
+    $this->registry = $registry;
     $this->setIdentifyStrategy($identifyStrategy ?? new PrimaryKeyStrategy());
     $this->setCreationStrategy($creationStrategy ?? new SimpleStrategy($this->registry));
   }
   public function setIdentifyStrategy(IdentifyStrategy $strategy): void { $this->identifyStrategy = $strategy; }
   public function setCreationStrategy(CreationStrategy $strategy): void { $this->creationStrategy = $strategy; }
 
-  public function get($className, array $data = [])
+  public function get($class, array $data = [])
   {
+    $className = is_object($class) ? get_class($class) : $class;
     $em   = $this->getManager($className);
     $meta = $em->getClassMetadata($className);
 
-    $entity = $this->create($className, $data);
-    $this->setDataForEntity($entity, $data, $meta);
+    $entity = is_object($class) ? $class : $this->create($class, $data);
+    $this->update($entity, $data, $meta);
 
     return $entity;
   }
 
-  public function create($className, array $identifier = [])
+  public function create($class, array $identifier = [])
   {
+    $className = is_object($class) ? get_class($class) : $class;
     $em   = $this->getManager($className);
     $meta = $em->getClassMetadata($className);
     $id   = $this->getIdentifier($meta, $identifier);
 
-    return $this->creationStrategy->create($meta, $id);
+    return $this->creationStrategy->create($meta, $id, is_object($class) ? $class : null);
   }
+
   public function clearState(): void
   {
     $this->creationStrategy->clearState();
   }
 
-  public function setDataForEntity($entity, array $data = [], ClassMetadata $meta = null)
+  public function update($entity, array $data = [], ClassMetadata $meta = null)
   {
     $className = get_class($entity);
 
@@ -74,12 +77,17 @@ class EntityInstantiator implements Instantiator
       $value = $data[$field];
       unset($data[$field]);
       if (!$meta->isAssociationInverseSide($field)) { // owning side
-        if (!$value instanceof $targetClass) {
-          $value = $this->get($targetClass, is_scalar($value) ? [$value] : $value);
+        if ($value !== null && !$value instanceof $targetClass) {
+          $value = $this->get($entity->$field ?? $targetClass, is_scalar($value) ? [$value] : $value);
         }
         $this->setEntityFieldValue($entity, $field, $value);
-      } else {
+      } elseif ($meta->isCollectionValuedAssociation($field)) {
         $this->mergeCollection($meta, $entity, $field, $value);
+      } else {
+        if ($value !== null && !$value instanceof $targetClass) {
+          $value = $this->get($entity->$field ?? $targetClass, $value);
+        }
+        $this->setEntityFieldValue($entity, $field, $value);
       }
     }
 

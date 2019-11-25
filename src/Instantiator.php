@@ -10,7 +10,7 @@ interface Instantiator
   /** @throws NotFound */
   public function get($className, array $data = []);
 
-  public function setDataForEntity($entity, array $data = [], ClassMetadata $meta = null);
+  public function update($entity, array $data = [], ClassMetadata $meta = null);
   public function setIdentifyStrategy(IdentifyStrategy $strategy): void;
   public function create($className, array $identifier = []);
   public function clearState(): void;
