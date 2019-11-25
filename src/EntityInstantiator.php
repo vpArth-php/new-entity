@@ -1,9 +1,10 @@
 <?php
 
-namespace Arth\Util;
+namespace Arth\Util\Doctrine;
 
-use Arth\Util\Exception\NotFound;
-use Arth\Util\Identify\PrimaryKeyStrategy;
+use Arth\Util\Doctrine\Exception\NotFound;
+use Arth\Util\Doctrine\Identify\PrimaryKeyStrategy;
+use Arth\Util\TimeMachine;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Persistence\ManagerRegistry;

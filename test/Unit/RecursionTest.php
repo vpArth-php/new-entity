@@ -2,7 +2,7 @@
 
 namespace Test\Unit;
 
-use Arth\Util\EntityInstantiator;
+use Arth\Util\Doctrine\EntityInstantiator;
 use Arth\Util\TimeMachine;
 use DateTimeImmutable;
 use Doctrine\Common\Persistence\ManagerRegistry;

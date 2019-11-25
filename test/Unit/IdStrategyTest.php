@@ -2,12 +2,12 @@
 
 namespace Test\Unit;
 
-use Arth\Util\EntityInstantiator;
-use Arth\Util\Exception\InvalidArgument;
-use Arth\Util\Identify\CompositeStrategy;
-use Arth\Util\Identify\FieldSetStrategy;
-use Arth\Util\Identify\PrimaryKeyStrategy;
-use Arth\Util\IdentifyStrategy;
+use Arth\Util\Doctrine\EntityInstantiator;
+use Arth\Util\Doctrine\Exception\InvalidArgument;
+use Arth\Util\Doctrine\Identify\CompositeStrategy;
+use Arth\Util\Doctrine\Identify\FieldSetStrategy;
+use Arth\Util\Doctrine\Identify\PrimaryKeyStrategy;
+use Arth\Util\Doctrine\IdentifyStrategy;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use StdClass;
 use Test\Unit\Entity\Library\Author;

@@ -20,7 +20,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Arth\\Util\\": "src"
+            "Arth\\Util\\Doctrine\\": "src"
         }
     },
     "autoload-dev": {

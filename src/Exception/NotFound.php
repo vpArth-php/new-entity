@@ -1,6 +1,6 @@
 <?php
 
-namespace Arth\Util\Exception;
+namespace Arth\Util\Doctrine\Exception;
 
 use Exception;
 

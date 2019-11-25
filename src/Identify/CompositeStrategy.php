@@ -1,9 +1,9 @@
 <?php
 
-namespace Arth\Util\Identify;
+namespace Arth\Util\Doctrine\Identify;
 
-use Arth\Util\Exception\InvalidArgument;
-use Arth\Util\IdentifyStrategy;
+use Arth\Util\Doctrine\Exception\InvalidArgument;
+use Arth\Util\Doctrine\IdentifyStrategy;
 use Doctrine\Common\Persistence\Mapping\ClassMetadata;
 
 class CompositeStrategy implements IdentifyStrategy

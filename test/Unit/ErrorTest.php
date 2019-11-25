@@ -2,15 +2,9 @@
 
 namespace Test\Unit;
 
-use Arth\Util\EntityInstantiator;
-use Arth\Util\Exception\NotFound;
-use Arth\Util\TimeMachine;
-use DateTimeImmutable;
+use Arth\Util\Doctrine\EntityInstantiator;
+use Arth\Util\Doctrine\Exception\NotFound;
 use Doctrine\Common\Persistence\ManagerRegistry;
-use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\ORMException;
-use Doctrine\ORM\Tools\SchemaTool;
-use Doctrine\ORM\Tools\Setup;
 use PHPUnit\Framework\TestCase;
 use Test\Unit\Entity as E;
 

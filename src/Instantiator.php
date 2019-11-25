@@ -1,8 +1,8 @@
 <?php
 
-namespace Arth\Util;
+namespace Arth\Util\Doctrine;
 
-use Arth\Util\Exception\NotFound;
+use Arth\Util\Doctrine\Exception\NotFound;
 use Doctrine\Common\Persistence\Mapping\ClassMetadata;
 
 interface Instantiator
