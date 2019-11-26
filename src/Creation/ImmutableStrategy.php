@@ -25,8 +25,8 @@ class ImmutableStrategy implements CreationStrategy
     $className = $meta->getName();
     $em        = $this->getManager($className);
     if ($id) {
-      $key    = implode('|', $id);
-      $entity = $entity ?? $this->idMap[$className][$key] ?? $em->getRepository($className)->findOneBy($id);
+      $key    = implode('.', array_keys($id)) . '#' . implode('|', $id);
+      $entity = $this->idMap[$className][$key] ?? $em->getRepository($className)->findOneBy($id) ?? $entity;
     }
     if (isset($entity) && $this->hasEntityChanged($entity, $id, $data)) {
       $em->remove($entity);
@@ -60,7 +60,9 @@ class ImmutableStrategy implements CreationStrategy
       if (strpos($field, '_') === 0) {
         continue;
       }
-      if (($data[$field] ?? null) !== ($entity->$field ?? null)) {
+      $old = $entity->$field ?? null;
+      $new = $data[$field] ?? null;
+      if ((array_key_exists($field, $data)) && ($old !== $new)) {
         $changed = true;
         break;
       }

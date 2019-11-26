@@ -71,6 +71,7 @@ class EntityInstantiator implements Instantiator
 
     $associations = $meta->getAssociationNames();
     foreach ($associations as $field) {
+      $mapping     = $meta->getAssociationMapping($field);
       $targetClass = $meta->getAssociationTargetClass($field);
       if (!array_key_exists($field, $data)) {
         continue;
@@ -79,7 +80,10 @@ class EntityInstantiator implements Instantiator
       unset($data[$field]);
       if (!$meta->isAssociationInverseSide($field)) { // owning side
         if ($value !== null && !$value instanceof $targetClass) {
-          $value = $this->get($entity->$field ?? $targetClass, is_scalar($value) ? [$value] : $value);
+          if (is_scalar($value)) {
+            $value = [$mapping['joinColumns'][0]['referencedColumnName'] => $value];
+          }
+          $value = $this->get($entity->$field ?? $targetClass, $value);
         }
         $this->setEntityFieldValue($entity, $field, $value);
       } elseif ($meta->isCollectionValuedAssociation($field)) {

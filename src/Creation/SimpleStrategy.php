@@ -23,7 +23,7 @@ class SimpleStrategy implements CreationStrategy
     $em        = $this->getManager($className);
     if ($id) {
       $key    = implode('|', $id);
-      $entity = $entity ?? $this->idMap[$className][$key] ?? $em->getRepository($className)->findOneBy($id);
+      $entity = $this->idMap[$className][$key] ?? $em->getRepository($className)->findOneBy($id) ?? $entity;
     }
 
     $entity = $entity ?? $meta->newInstance();

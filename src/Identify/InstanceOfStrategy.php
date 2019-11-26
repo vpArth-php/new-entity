@@ -19,11 +19,15 @@ class InstanceOfStrategy implements IdentifyStrategy
   public function getIdentifier(ClassMetadata $meta, array $identifier): ?array
   {
     $className = $meta->getName();
+    $id        = null;
     foreach ($this->classMap as $class => $strategy) {
       if ($class === '' || is_a($className, $class, true)) {
-        return $strategy->getIdentifier($meta, $identifier);
+        $id = $strategy->getIdentifier($meta, $identifier);
+        if ($id) {
+          break;
+        }
       }
     }
-    return null;
+    return $id;
   }
 }
