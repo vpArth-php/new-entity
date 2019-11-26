@@ -12,6 +12,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Test\Unit\Entity\Library\Author;
 use Test\Unit\Entity\Library\Book;
 use Test\Unit\Entity\Simple\GetSetProps;
+use Test\Unit\Entity\Simple\Simple;
 
 class CreateStrategyTest extends DbBase
 {
@@ -38,9 +39,19 @@ class CreateStrategyTest extends DbBase
     $this->svc->setIdentifyStrategy($is);
     $this->svc->setCreationStrategy($cs);
 
+    $a              = new Author();
+    $a->title       = 'A1';
+    $a->description = 'First';
+    $this->em->persist($a);
+    $this->em->flush();
+
     $a1 = $this->svc->get(Author::class, ['title' => 'A1', 'description' => 'First']);
+    self::assertEquals($a, $a1, 'Unchanged entity should get the prev');
     $this->em->persist($a1);
+    $this->em->flush();
+
     $a2 = $this->svc->get(Author::class, ['title' => 'A1', 'description' => 'Second']);
+    self::assertNotEquals($a1, $a2, 'Changed entity should not be same');
     $this->em->persist($a2);
     $this->em->flush();
     $this->em->clear();
@@ -48,6 +59,42 @@ class CreateStrategyTest extends DbBase
 
     $all = $this->em->getRepository(Author::class)->findAll();
     static::assertCount(1, $all);
+    self::assertEquals('Second', $all[0]->description);
+    self::assertEquals(2, $all[0]->id);
+  }
+  public function testImmutableStrategySimple(): void
+  {
+    $is = new FieldSetStrategy(['title']);
+    $cs = new ImmutableStrategy($this->manager);
+    $this->svc->setIdentifyStrategy($is);
+    $this->svc->setCreationStrategy($cs);
+
+    $a1              = new Simple();
+    $a1->title       = 'A1';
+    $a1->description = 'first';
+    $this->em->persist($a1);
+    $this->em->flush();
+
+    $e = $this->svc->get(Simple::class, ['title' => 'A1', 'description' => 'Second']);
+    static::assertNotEquals($a1, $e);
+    $this->em->persist($e);
+    $this->em->flush();
+
+    $all = $this->em->getRepository(Simple::class)->findAll();
+    static::assertCount(1, $all);
+    self::assertEquals('Second', $all[0]->description);
+    self::assertEquals(2, $all[0]->id);
+  }
+  public function testImmutableStrategyJsonSerializable(): void
+  {
+    $is = new FieldSetStrategy(['title']);
+    $cs = new ImmutableStrategy($this->manager);
+    $this->svc->setIdentifyStrategy($is);
+    $this->svc->setCreationStrategy($cs);
+
+    $a1 = $this->svc->get(Author::class, ['title' => 'A1', 'description' => 'First']);
+    $a2 = $this->svc->get(Author::class, ['title' => 'A1', 'description' => 'Second']);
+    static::assertNotEquals($a1, $a2);
   }
 
   public function testInstanceOfStrategy(): void

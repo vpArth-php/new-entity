@@ -9,14 +9,15 @@ use Test\Unit\Util\JsonSerializeFields;
 
 /**
  * @ORM\Entity
- * @property-read int id
- * @property      string title
+ * @property-read int               id
+ * @property      string            title
+ * @property      string            description
  * @property Book[]|ArrayCollection books
  */
 class Author implements JsonSerializable
 {
   use JsonSerializeFields;
-  protected static $fields = ['id', 'title', 'description', 'books'];
+  protected static $fields = ['_uuid', 'id', 'title', 'description', 'books'];
 
   /** @ORM\Id @ORM\GeneratedValue @ORM\Column(type="integer") */
   protected $id;
@@ -27,9 +28,13 @@ class Author implements JsonSerializable
   /** @ORM\OneToMany(targetEntity="Book", mappedBy="author", cascade={"persist"}) */
   protected $books;
 
+  /** @var int */
+  protected $_uuid;
+
   public function __construct()
   {
     $this->setBooks(new ArrayCollection());
+    $this->_uuid = random_int(0, 1000);
   }
 
   public function setBooks($books): void

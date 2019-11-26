@@ -66,34 +66,49 @@ class CreationTest extends DbBase
     static::assertNotEmpty($author1);
     static::assertEquals('Пушкин А.С.', $author1->title);
 
-    /** @var E\Library\Book $book */
+    $isbn = $this->svc->get(E\Library\ISBN::class, [
+        'title' => '978-5-17-103766-6',
+    ]);
+    $this->em->persist($isbn);
+    $this->em->flush();
+
+    /** @var E\Library\Book $b1 */
     // relation by PK
-    $book = $this->svc->get(E\Library\Book::class, [
+    $b1 = $this->svc->get(E\Library\Book::class, [
         'title'  => 'Евгений Онегин',
         'author' => $author1->id,
+        'isbn'   => $isbn->id,
     ]);
-    $this->em->persist($book);
+    $this->em->persist($b1);
     $this->em->flush();
-    static::assertNotEmpty($book);
-    static::assertEquals($author1->id, $book->author->id);
-    static::assertEquals(self::NOW, $book->createdAt->format('Y-m-d H:i:s'));
+    static::assertNotEmpty($b1);
+    static::assertEquals($author1->id, $b1->author->id);
+    static::assertEquals(self::NOW, $b1->createdAt->format('Y-m-d H:i:s'));
 
     // relation by object
-    $book = $this->svc->get(E\Library\Book::class, [
+    $b2 = $this->svc->get(E\Library\Book::class, [
+        'id'              => $b1->id,
         'title'           => 'Евгений Онегин',
         'author'          => $author1,
+        'isbn'            => $isbn,
         'descriptionText' => 'Роман в стихах',
         'createdAt'       => self::NOW,
         'writtenAt'       => '1830-09-25',
     ]);
-    $this->em->persist($book);
+    static::assertEquals($b1, $b2);
+    $this->em->persist($b2);
     $this->em->flush();
+    $i2 = $this->svc->get(E\Library\ISBN::class, [
+        'id'   => $isbn->id,
+        'book' => ['id' => $b2->id],
+    ]);
+    static::assertEquals($isbn, $i2);
 
-    static::assertNotEmpty($book);
-    static::assertEquals($author1->id, $book->author->id);
-    static::assertEquals('РОМАН В СТИХАХ', $book->description);
-    static::assertEquals(self::NOW, $book->createdAt->format('Y-m-d H:i:s'));
-    static::assertEquals('1830-09-25 00:00:00', $book->writtenAt->format('Y-m-d H:i:s'));
+    static::assertNotEmpty($b2);
+    static::assertEquals($author1->id, $b2->author->id);
+    static::assertEquals('РОМАН В СТИХАХ', $b2->description);
+    static::assertEquals(self::NOW, $b2->createdAt->format('Y-m-d H:i:s'));
+    static::assertEquals('1830-09-25 00:00:00', $b2->writtenAt->format('Y-m-d H:i:s'));
   }
 
   public function data(): ?Generator

@@ -24,6 +24,7 @@ class FieldSetStrategy implements IdentifyStrategy
     foreach ($idFields as $i => $idField) {
       if (array_key_exists($i, $identifier)) {
         $identifier[$idField] = $identifier[$i];
+        unset($identifier[$i]);
       }
       if (!array_key_exists($idField, $identifier)) {
         return null;

@@ -105,6 +105,10 @@ class IdStrategyTest extends DbBase
     $a        = $this->svc->get(Author::class, ['id' => $author2->id, 'title' => $author1->title]);
     $a->title = 'A selected';
     static::assertEquals($author2, $a);
+    /** @var Author $a */
+    $a        = $this->svc->get(Author::class, [$author2->id]);
+    $a->title = 'A selected';
+    static::assertEquals($author2, $a);
 
     $book1 = $this->createBook($a, 'B1', 'First');
     $book2 = $this->createBook($a, 'B2', 'Second');

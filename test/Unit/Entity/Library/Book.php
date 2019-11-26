@@ -13,17 +13,19 @@ use Test\Unit\Util\JsonSerializeFields;
  * @ORM\Entity
  * @ORM\HasLifecycleCallbacks
  *
- * @property-read number id
- * @property      string title
- * @property      string description
- * @property      Author author
+ * @property-read number            id
+ * @property      string            title
+ * @property      string            description
+ * @property      Author            author
+ * @property      ISBN              isbn
+ *
  * @property      DateTimeImmutable createdAt
  * @property      DateTimeImmutable writtenAt
  */
 class Book implements JsonSerializable
 {
   use JsonSerializeFields;
-  protected static $fields = ['id', 'title', 'description', 'createdAt', 'writtenAt', 'author'];
+  protected static $fields = ['id', 'title', 'description', 'createdAt', 'writtenAt', 'author', 'isbn'];
 
   /** @ORM\Id @ORM\GeneratedValue @ORM\Column(type="integer") */
   protected $id;
@@ -40,6 +42,11 @@ class Book implements JsonSerializable
   /** @ORM\ManyToOne(targetEntity="Author", inversedBy="books", cascade={"persist"}) */
   protected $author;
 
+  /** @ORM\OneToOne(targetEntity="ISBN", inversedBy="book", cascade={"persist"})
+   * @ORM\JoinColumn(nullable=true)
+   */
+  protected $isbn;
+
   public function __construct(Author $author) {
     $this->setAuthor($author);
   }
@@ -51,6 +58,11 @@ class Book implements JsonSerializable
       $author->setBooks(new ArrayCollection());
     }
     $author->books->add($this);
+  }
+  public function setIsbn(ISBN $isbn): void
+  {
+    $this->isbn = $isbn;
+    $isbn->book = $this;
   }
 
   /** @noinspection PhpUnused */

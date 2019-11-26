@@ -6,6 +6,7 @@ use Arth\Util\Doctrine\CreationStrategy;
 use Arth\Util\Doctrine\GetManager;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\Common\Persistence\Mapping\ClassMetadata;
+use JsonSerializable;
 
 class ImmutableStrategy implements CreationStrategy
 {
@@ -50,7 +51,12 @@ class ImmutableStrategy implements CreationStrategy
   {
     $fields = is_callable($this->serviceFields) ? ($this->serviceFields)($entity) : $this->serviceFields;
 
-    $entityData      = get_object_vars($entity);
+    if ($entity instanceof JsonSerializable) {
+      $entityData = $entity->jsonSerialize();
+    } else {
+      $entityData = get_object_vars($entity);
+    }
+
     $serviceFieldMap = array_flip($fields);
     $changed         = false;
     foreach ($entityData as $field => $value) {
