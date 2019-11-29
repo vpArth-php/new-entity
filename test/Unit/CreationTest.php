@@ -113,8 +113,12 @@ class CreationTest extends DbBase
 
   public function data(): ?Generator
   {
-    yield [E\Simple\PublicProps::class, ['title' => 'First'], ['title' => 'First']];
-    yield [E\Simple\MagicProps::class, ['title' => 'First'], ['title' => 'First']];
-    yield [E\Simple\GetSetProps::class, ['title' => 'First'], ['title' => 'First']];
+    yield [
+        'className' => E\Simple\PublicProps::class,
+        'data'      => ['id' => 101, 'title' => 'First'],
+        'expected'  => ['title' => 'First'],
+    ];
+    yield [E\Simple\MagicProps::class, ['id' => 101, 'title' => 'First'], ['title' => 'First']];
+    yield [E\Simple\GetSetProps::class, ['id' => 101, 'title' => 'First'], ['title' => 'First']];
   }
 }

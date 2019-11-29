@@ -3,19 +3,22 @@
 namespace Test\Unit\Util;
 
 use Doctrine\Common\Collections\Collection;
-use JsonSerializable;
 
 trait JsonSerializeFields
 {
+  private $_serializedMap = [];
   public function jsonSerialize()
   {
     return array_reduce(static::$fields ?? array_keys(get_object_vars($this)), function ($result, $field) {
-      $result[$field] = static::serialize($this->$field);
+      $serialized = $this->_serializedMap[$field] ?? static::serialize($this->$field);
+
+      $this->_serializedMap[$field] = $serialized;
+      $result[$field]               = $serialized;
       return $result;
     }, []);
   }
 
-  protected static function serialize($val)
+  protected static function serialize($val): array
   {
     if ($val instanceof Collection) {
       $val = $val->toArray();
@@ -25,9 +28,7 @@ trait JsonSerializeFields
         return static::serialize($item);
       }, $val);
     }
-    if ($val instanceof JsonSerializable) {
-      $val = $val->jsonSerialize();
-    }
+
     return $val;
   }
 }

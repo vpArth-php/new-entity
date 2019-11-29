@@ -30,10 +30,4 @@ class InstanceOfStrategy implements CreationStrategy
     }
     return $res;
   }
-  public function clearState(): void
-  {
-    foreach ($this->classMap as $strategy) {
-      $strategy->clearState();
-    }
-  }
 }

@@ -30,7 +30,7 @@ class ISBN implements JsonSerializable
   /** @ORM\OneToOne(targetEntity="Book", mappedBy="isbn", cascade={"persist"}) */
   public $book;
 
-  public function setBook(Book $book)
+  public function setBook(Book $book): void
   {
     $this->book = $book;
     $book->isbn = $this;

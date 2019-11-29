@@ -9,7 +9,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\Common\Persistence\Mapping\ClassMetadata;
-use Doctrine\ORM\Id\AssignedGenerator;
+use Throwable;
 
 class EntityInstantiator implements Instantiator
 {
@@ -39,6 +39,12 @@ class EntityInstantiator implements Instantiator
     $entity = $this->create($class, $data);
     $this->update($entity, $data, $meta);
 
+    try {
+      $em->persist($entity);
+    } catch (Throwable $e) {
+      // ignore
+    }
+
     return $entity;
   }
 
@@ -54,7 +60,9 @@ class EntityInstantiator implements Instantiator
 
   public function clearState(): void
   {
-    $this->creationStrategy->clearState();
+    if ($this->creationStrategy instanceof StatefulCreationStrategy) {
+      $this->creationStrategy->clearState();
+    }
   }
 
   public function update($entity, array $data = [], ClassMetadata $meta = null)
@@ -103,13 +111,7 @@ class EntityInstantiator implements Instantiator
 
   protected function getIdentifier(ClassMetadata $meta, array &$data): ?array
   {
-    $id = $this->identifyStrategy->getIdentifier($meta, $data);
-    if ($id) {
-      foreach ($id as $field => $value) {
-        unset($data[$field]);
-      }
-    }
-    return $id;
+    return $this->identifyStrategy->getIdentifier($meta, $data);
   }
   protected function initCollectionFields(ClassMetadata $meta, $entity): void
   {
@@ -146,7 +148,7 @@ class EntityInstantiator implements Instantiator
   }
   protected function setFieldValues(ClassMetadata $meta, $entity, &$data): void
   {
-    if (!$meta->idGenerator instanceof AssignedGenerator) {
+    if (!$meta->isIdentifierNatural()) {
       foreach ($meta->getIdentifierFieldNames() as $idField) {
         unset($data[$idField]);
       }

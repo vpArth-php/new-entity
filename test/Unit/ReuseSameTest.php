@@ -35,7 +35,7 @@ class ReuseSameTest extends DbBase
             ['title' => 'Сказка о золотой рыбке'],
         ],
     ]);
-    $this->svc->clearState();
+    // $this->svc->clearState();
     static::assertCount(3, $entity->books);
     $this->em->persist($entity);
     $this->em->flush();
@@ -61,6 +61,7 @@ class ReuseSameTest extends DbBase
     $this->svc->setIdentifyStrategy(new FieldSetStrategy(['title']));
     $book1 = $this->svc->get(Book::class, ['title' => 'One', 'description' => '1']);
     $this->svc->clearState();
+    $this->em->clear();
     $book2 = $this->svc->get(Book::class, ['title' => 'One', 'description' => '2']);
 
     static::assertNotEquals($book1, $book2);
