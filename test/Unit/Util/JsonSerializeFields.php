@@ -18,7 +18,7 @@ trait JsonSerializeFields
     }, []);
   }
 
-  protected static function serialize($val): array
+  protected static function serialize($val)
   {
     if ($val instanceof Collection) {
       $val = $val->toArray();
