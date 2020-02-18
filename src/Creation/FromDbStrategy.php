@@ -73,7 +73,7 @@ class FromDbStrategy implements CreationStrategy
         continue;
       }
       foreach ($id as $field => $value) {
-        if ($entity->$field !== $value) {
+        if (null === $value || $entity->$field !== $value) {
           continue 2;
         }
       }
