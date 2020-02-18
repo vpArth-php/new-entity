@@ -2,6 +2,7 @@
 
 namespace Test\Unit;
 
+use Arth\Util\Doctrine\Creation\SimpleStrategy;
 use Arth\Util\Doctrine\EntityInstantiator;
 use Arth\Util\Doctrine\Exception\InvalidArgument;
 use Arth\Util\Doctrine\Identify\CompositeStrategy;
@@ -10,6 +11,8 @@ use Arth\Util\Doctrine\Identify\InstanceOfStrategy;
 use Arth\Util\Doctrine\Identify\PrimaryKeyStrategy;
 use Arth\Util\Doctrine\IdentifyStrategy;
 use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use StdClass;
 use Test\Unit\Entity\Library\Author;
 use Test\Unit\Entity\Library\Book;
@@ -19,15 +22,19 @@ class IdStrategyTest extends DbBase
 {
   /** @var EntityInstantiator */
   private $svc;
+
+  /** @var ManagerRegistry */
+  private $manager;
+
   protected function setUp(): void
   {
     parent::setUp();
-    $manager = $this->createMock(ManagerRegistry::class);
-    $manager
+    $this->manager = $this->createMock(ManagerRegistry::class);
+    $this->manager
         ->method('getManagerForClass')
         ->willReturn($this->em);
 
-    $this->svc = new EntityInstantiator($manager);
+    $this->svc = new EntityInstantiator($this->manager);
   }
 
   public function testDefaultStrategy(): void
@@ -76,6 +83,20 @@ class IdStrategyTest extends DbBase
 
     static::assertNotEmpty($created);
     static::assertEquals($entity->id, $created->id);
+  }
+
+  public function testSimpleStrategy(): void
+  {
+    $this->svc->setCreationStrategy(new SimpleStrategy($this->manager));
+    for ($i = 0; $i < 2; $i++) {
+      $created = $this->svc->get(Author::class, ['id' => null, 'title' => 'Mark Twain']);
+      $this->em->persist($created);
+    }
+    $this->em->flush();
+
+    $repo = new EntityRepository($this->em, new ClassMetadata(Author::class));
+    $res  = $repo->findBy(['title' => 'Mark Twain']);
+    static::assertCount(2, $res);
   }
 
   public function testInstanceOfStrategy(): void
